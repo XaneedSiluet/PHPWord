@@ -638,6 +638,40 @@ HTML;
         self::assertEquals('red', $doc->getElement($xpath)->getAttribute('w:fill'));
     }
 
+    public function testParseTableRowspan()
+    {
+        $phpWord = new PhpWord();
+        $section = $phpWord->addSection();
+        $html = '<table>
+            <tr><td>1</td><td rowspan="2">2</td><td rowspan="3">3</td></tr>
+            <tr><td>4</td></tr>
+            <tr><td>7</td><td>8</td></tr>
+        </table>';
+        Html::addHtml($section, $html);
+
+        $doc = TestHelperDOCX::getDocument($phpWord, 'Word2007');
+
+        $xpath = '/w:document/w:body/w:tbl/w:tr[1]/w:tc[2]/w:tcPr/w:vMerge';
+        $this->assertTrue($doc->elementExists($xpath));
+        $this->assertEquals('restart', $doc->getElement($xpath)->getAttribute('w:val'));
+
+        $xpath = '/w:document/w:body/w:tbl/w:tr[1]/w:tc[3]/w:tcPr/w:vMerge';
+        $this->assertTrue($doc->elementExists($xpath));
+        $this->assertEquals('restart', $doc->getElement($xpath)->getAttribute('w:val'));
+
+        $xpath = '/w:document/w:body/w:tbl/w:tr[2]/w:tc[2]/w:tcPr/w:vMerge';
+        $this->assertTrue($doc->elementExists($xpath));
+        $this->assertEquals('continue', $doc->getElement($xpath)->getAttribute('w:val'));
+
+        $xpath = '/w:document/w:body/w:tbl/w:tr[2]/w:tc[3]/w:tcPr/w:vMerge';
+        $this->assertTrue($doc->elementExists($xpath));
+        $this->assertEquals('continue', $doc->getElement($xpath)->getAttribute('w:val'));
+
+        $xpath = '/w:document/w:body/w:tbl/w:tr[3]/w:tc[3]/w:tcPr/w:vMerge';
+        $this->assertTrue($doc->elementExists($xpath));
+        $this->assertEquals('continue', $doc->getElement($xpath)->getAttribute('w:val'));
+    }
+
     /**
      * Tests parsing of ul/li.
      */
