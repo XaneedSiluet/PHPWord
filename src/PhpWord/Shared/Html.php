@@ -474,6 +474,15 @@ class Html
             $cellStyles['gridSpan'] = $colspan - 0;
         }
 
+        $rowspan = $node->getAttribute('rowspan');
+        if (!empty($rowspan)) {
+            self::calculateRowspan($node, $rowspan, $cellStyles);
+        }
+
+        if (key_exists($node->getNodePath(), self::$options['ROWSPAN'] ?? [])) {
+            $cellStyles['vMerge'] = self::$options['ROWSPAN'][$node->getNodePath()];
+        }
+
         // set cell width to control column widths
         $width = $cellStyles['width'] ?? null;
         unset($cellStyles['width']); // would not apply
@@ -1199,6 +1208,47 @@ class Html
         // - table - throws error "cannot be inside textruns", e.g. lists
         // - line - that is a shape, has different behaviour
         // - repeated text, e.g. underline "_", because of unpredictable line wrapping
+    }
+
+    /**
+     * @param DOMNode $node
+     * @param $rowspanValue
+     * @param $cellStyles
+     * @return void
+     */
+    protected static function calculateRowspan($node, $rowspanValue, &$cellStyles): void
+    {
+        /** @var DOMXPath $xpath */
+        $xpath = self::$xpath;
+
+        $nodePath = $node->getNodePath();
+        $cellStyles['vMerge'] = 'restart';
+        self::$options['ROWSPAN'][$nodePath] = 'restart';
+
+        preg_match('/tr\[(?<tr>\d)\]\/td\[(?<td>\d)\]/', $nodePath, $matches);
+        $trPosStart = (int) $matches['tr'];
+        $trPosEnd = $trPosStart + $rowspanValue;
+        $tdPos = (int) $matches['td'];
+
+        $list = $xpath->query("../../tr[position()>{$trPosStart} and position()<{$trPosEnd}]", $node);
+
+        foreach ($list as $item) {
+            $new = new \DOMElement('td');
+            $p = $tdPos+1;
+
+            $td = $xpath->query("td[{$p}]", $item);
+            if ($td->count()) {
+                $item->insertBefore($new, $td->item(0));
+            } else {
+                $item->appendChild($new);
+            }
+        }
+
+        for ($i = $matches['tr']; $i < $rowspanValue; $i++) {
+            $row = $i + 1;
+            $continue = preg_replace('/tr\[(\d)\]/', "tr[{$row}]", $nodePath);
+            self::$options['ROWSPAN'][$continue] = 'continue';
+        }
     }
 
     private static function convertRgb(string $rgb): string
