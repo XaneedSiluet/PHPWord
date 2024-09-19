@@ -1225,7 +1225,7 @@ class Html
         $cellStyles['vMerge'] = 'restart';
         self::$options['ROWSPAN'][$nodePath] = 'restart';
 
-        preg_match('/tr\[(?<tr>\d)\]\/td\[(?<td>\d)\]/', $nodePath, $matches);
+        preg_match('/tr\[(?<tr>\d+)\]\/td\[(?<td>\d+)\]/', $nodePath, $matches);
         $trPosStart = (int) $matches['tr'];
         $trPosEnd = $trPosStart + $rowspanValue;
         $tdPos = (int) $matches['td'];
